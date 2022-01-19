@@ -1,5 +1,5 @@
-# AERO-402-b
-# Howdy AERO 402b Team CNCC!
-# This is the first committ the new repository!
+# Cislunar Navigation and Communication Constellation (CNCC)
 
-#test
+AERO 402 Team B Github Repository
+
+![Alt text](/Pictures/Moon.jpg)
