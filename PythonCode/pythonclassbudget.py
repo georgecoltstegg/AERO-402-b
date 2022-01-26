@@ -15,7 +15,9 @@ class budget:
         self.msat = 0#mass of 1 satellite
         self.msub = []#mass breakdown 1 satellite
         self.legend = ['comms', 'adcs', 'thermal', 'power', 'structure', 'propulsion', 'personeel']
-    def populate_budget(self, costkg, mc, pc, madcs, padcs, theff, mth, pmpw, strfrac, deltavdeorbit, life, deltavskyr, ispfuel, numengr, salary, tdes, admin):
+    def populate_budget(self, georgestouple, numengr = 7, salary = 150000, tdes = 1, admin = 6):
+        costkg, mc, pc, madcs, padcs, theff, mth, pmpw, strfrac, life, deltavskyr, ispfuel = georgestouple
+        
         self.msub.append(mc)#mass of comms
         self.msat += mc
         cc = 10 ** 3 * (20 + 230 * mc ** 0.59) + mc * costkg#cost of comms
@@ -49,7 +51,7 @@ class budget:
         self.csub.append(self.numsats * cstr)
         self.ctotal += self.numsats * cstr
         
-        mprop = (mc + madcs + mp + mth + mstr) * (np.exp((deltavdeorbit + life * deltavskyr) * 1.1 / ispfuel) - 1)
+        mprop = (mc + madcs + mp + mth + mstr) * (np.exp((life * deltavskyr) * 1.1 / ispfuel) - 1)
         self.msub.append(mprop)#mass of propulsion
         self.msat += mprop
         cprop = (0.704 + 0.0235 * (mprop / 6) ** 1.261) * 10 ** 6 + mprop * costkg#cost of propulsion
@@ -70,6 +72,11 @@ class budget:
         for i in range(len(self.legend)):
             print('    ' + str(self.legend[i]).ljust(12, ' ') + str(round(self.csub[i], 2)).ljust(16, ' ') + str(round(self.msub[i], 3)).ljust(12, ' '))
 
+inputt = 500000, 1.61, 63, 6.53, 57.5, 0.8, 1.65, 0.01, 0.1, 3, 150, 2500
 sys = budget(16)
-sys.populate_budget(500000, 1.61, 63, 6.53, 57.5, 1.2, 1.65, 0.01, 0.1, 300, 3, 150, 2500, 7, 150000, 1, 6)
+sys.populate_budget(inputt)
 sys.print_budget()
+
+#georgestouple - the stuff George has to send me
+#numsats, mc, pc, madcs, padcs, theff, mth, pmpw, strfrac, life, deltavskyr, ispfuel - number of satellites, mass of comms, power of comms, mass od adcs, power of adcs, efficiency of thermal system, mass of thermal, kg of power system mass per watt of consumption, ratio of structure to payload, lifespan, deltav per year for stationkeeping, specific impulse of fuel (m/s) - George Colts-Tegg
+#numengr, salary, tdes, admin - number of engineers, engineer salary, time to develop in years, administrative losses - Eric Comstock
