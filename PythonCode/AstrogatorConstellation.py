@@ -101,13 +101,86 @@ class orbitalprop:
 
         self.stkRoot.EndUpdate()
                 
-    def currentPositionKep(sat):
-        #Give a sat you are interested in and return its Keplerian position.
-        return [r.random(),r.randint(10000,100000),r.randint(1,10),r.randint(1,10),r.randint(1,10),r.randint(1,359)]
+    def currentPositionKep(self, sat):
+        #Give a sats index you are interested in and return its Keplerian position.
+        satellites = self.scenario.Children
+        sat2 = satellites.GetElements(AgESTKObjectType.eSatellite)
+        sat2 = sat2.Item(sat)
+        reportData = ""
+        _driver = sat2.Propagator
+        Orbit = _driver.MainSequence["Propagate"]
+        result = Orbit.ExecSummary
+        intervals = result.Value
+        for i in range(0, intervals.Count):
+            interval = intervals.Item(i)
+            datasets = interval.DataSets
+            for j in range(0, datasets.Count):
+                dataset = datasets.Item(j)
+                elements = dataset.GetValues()
+                for o in elements:
+                    reportData += o + "\r\n";
+        breakdown = reportData.split()
+        sma_s = "sma:"
+        ecc_s = "ecc:"
+        inc_s = "inc:"
+        raan_s = "RAAN:"
+        omega_s = "w:"
+        trueAnomoly_s = "TA:"
+
+        split = breakdown.index(sma_s)
+        sma = breakdown[split + 1]
+        split = breakdown.index(ecc_s)
+        ecc = breakdown[split + 1]
+        split = breakdown.index(inc_s)
+        inc = breakdown[split + 1]
+        split = breakdown.index(raan_s)
+        raan = breakdown[split + 1]
+        split = breakdown.index(omega_s)
+        w = breakdown[split + 1]
+        split = breakdown.index(trueAnomoly_s)
+        trueAnomoly = breakdown[split + 1]
+
+        return [sma,ecc,inc,raan,w,trueAnomoly]
     
-    def currentPositionCart(sat):
-        #Give a sat you are interested in and return its Cartesian position.
-        return [r.randint(10000,100000),r.randint(10000,100000),r.randint(10000,100000)]
+    def currentPositionCart(self, sat):
+        #Give a sats index you are interested in and return its Cartesian position.
+        satellites = self.scenario.Children
+        sat2 = satellites.GetElements(AgESTKObjectType.eSatellite)
+        sat2 = sat2.Item(sat)
+        reportData = ""
+        _driver = sat2.Propagator
+        Orbit = _driver.MainSequence["Propagate"]
+        result = Orbit.ExecSummary
+        intervals = result.Value
+        for i in range(0, intervals.Count):
+            interval = intervals.Item(i)
+            datasets = interval.DataSets
+            for j in range(0, datasets.Count):
+                dataset = datasets.Item(j)
+                elements = dataset.GetValues()
+                for o in elements:
+                    reportData += o + "\r\n";
+        breakdown = reportData.split()
+        x_s = "X:"
+        y_s = "Y:"
+        z_s = "Z:"
+        vx_s = "Vx:"
+        vy_s = "Vy:"
+        vz_s = "Vz:"
+
+        split = breakdown.index(x_s)
+        x = breakdown[split + 1]
+        split = breakdown.index(y_s)
+        y = breakdown[split + 1]
+        split = breakdown.index(z_s)
+        z = breakdown[split + 1]
+        split = breakdown.index(vx_s)
+        vx = breakdown[split + 1]
+        split = breakdown.index(vy_s)
+        vy = breakdown[split + 1]
+        split = breakdown.index(vz_s)
+        vz = breakdown[split + 1]
+        return [x, y, z, vx, vy, vz]
     
     def lineOfSight(sat,locationofinterest):
         #Give a sat and location of interest and say whether there is a line of sight and give the distance if so.
@@ -160,6 +233,8 @@ orbitalelements=[[0,10000,75,20,0],[0,10000,75,80,0],[0,10000,75,140,0],[0,10000
 propa = orbitalprop(False)
 propa.CreateScenario(False,'Today','+120 hrs')
 propa.generateConstellation(4,4,orbitalelements)
+#print(propa.currentPositionKep(11))
+print(propa.currentPositionCart(11))
 propa.clearScene(4, 4)
 # print(propa.percentCoverage())
 ##stkRoot.EndUpdate()
