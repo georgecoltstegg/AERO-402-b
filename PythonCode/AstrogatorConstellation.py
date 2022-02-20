@@ -28,7 +28,7 @@ class orbitalprop:
         else:
             #Finds STK and connects to it if it is already running.
             STK_PID = os.getenv('STK_PID')
-            self.stk = STKDesktop.AttachToApplication(pid=int(STK_PID))
+            self.stk = STKDesktop.AttachToApplication(pid=STK_PID)
         
     def CreateScenario(self,scenarionew,timestart,duration):
         """
@@ -51,8 +51,12 @@ class orbitalprop:
         self.stkRoot = self.stk.Root
         if scenarionew:
             self.stkRoot.NewScenario('Constellation_Scenario')
-        self.scenario = self.stkRoot.CurrentScenario
-        self.scenario.SetTimePeriod(timestart, duration) #Usually 'Today' and '+48 hrs'
+            self.scenario = self.stkRoot.CurrentScenario
+            self.scenario.SetTimePeriod(timestart, duration) #Usually 'Today' and '+48 hrs'
+
+        else:
+            self.scenario = self.stkRoot.CurrentScenario
+            self.scenario.SetTimePeriod(timestart, duration)
 
     def generateConstellation(self,numOrbitPlanes,numSatsPerPlane,Orbits):
         self.constellation = self.scenario.Children.New(AgESTKObjectType.eConstellation, "SatConstellation")
@@ -87,13 +91,15 @@ class orbitalprop:
                 
                 # Propagate with moon high precision propagator
                 propagate = self._driver.MainSequence.Insert(AgEVASegmentType.eVASegmentTypePropagate, "Propagate", "-")
-                # propagate.InitialState.CoordSystemName = "CentralBody/Moon Inertial"
-                # propagate.PropagatorName = "Moon HPOP Default v10"
+                propagate.Properties.DisplayCoordinateSystem = 'CentralBody/Moon Inertial'
+                propagate.PropagatorName = "Moon HPOP Default v10"
                 propagate.StoppingConditions["Duration"].Properties.Trip = 432000 #432000
                 # Run MCS
                 self._driver.RunMCS()
                 # Add to constellation object
                 self.constellation.Objects.AddObject(satellite)
+
+        self.stkRoot.EndUpdate()
                 
     def currentPositionKep(sat):
         #Give a sat you are interested in and return its Keplerian position.
@@ -142,11 +148,20 @@ class orbitalprop:
         fomResults = fomDataProvider.Exec()
         percentCoverage = fomResults.DataSets.GetDataSetByName("Minimum").GetValues()[0]
         return percentCoverage*100
-#orbitalelements=[[0,10000,75,20,0],[0,10000,75,80,0],[0,10000,75,140,0],[0,10000,75,200,0]]
-#propa = orbitalprop(True)
-#propa.CreateScenario(True,'Today','+120 hrs')
-#propa.generateConstellation(4,4,orbitalelements)
-#print(propa.percentCoverage())
+
+    def clearScene(self, orbitPlaneNum, numSatsPerPlane):
+        satellites = self.scenario.Children
+        self.scenario.Children.Unload(AgESTKObjectType.eConstellation, "SatConstellation")
+        for i in range(1, orbitPlaneNum+1):
+            for j in range(1, numSatsPerPlane+1):
+                satellites.Unload(AgESTKObjectType.eSatellite, f"sat{i}{j}")
+
+orbitalelements=[[0,10000,75,20,0],[0,10000,75,80,0],[0,10000,75,140,0],[0,10000,75,200,0]]
+propa = orbitalprop(False)
+propa.CreateScenario(False,'Today','+120 hrs')
+propa.generateConstellation(4,4,orbitalelements)
+propa.clearScene(4, 4)
+# print(propa.percentCoverage())
 ##stkRoot.EndUpdate()
 
 
