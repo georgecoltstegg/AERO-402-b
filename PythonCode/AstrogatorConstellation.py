@@ -57,6 +57,7 @@ class orbitalprop:
         else:
             self.scenario = self.stkRoot.CurrentScenario
             self.scenario.SetTimePeriod(timestart, duration)
+            self.stkRoot.Rewind()
 
     def generateConstellation(self,numOrbitPlanes,numSatsPerPlane,Orbits):
         self.constellation = self.scenario.Children.New(AgESTKObjectType.eConstellation, "SatConstellation")
@@ -80,6 +81,7 @@ class orbitalprop:
                 
                 # Modify parameters of initial state (keplerian)
                 initState.SetElementType(AgEVAElementType.eVAElementTypeKeplerian)
+                initState.OrbitEpoch = 'Today'
                 modKep = initState.Element
 
                 modKep.PeriapsisRadiusSize = Orbits[orbitPlaneNum-1][1]   # Will change to for loop of array [2500:15000]
@@ -93,7 +95,7 @@ class orbitalprop:
                 propagate = self._driver.MainSequence.Insert(AgEVASegmentType.eVASegmentTypePropagate, "Propagate", "-")
                 propagate.Properties.DisplayCoordinateSystem = 'CentralBody/Moon Inertial'
                 propagate.PropagatorName = "Moon HPOP Default v10"
-                propagate.StoppingConditions["Duration"].Properties.Trip = 432000 #432000
+                propagate.StoppingConditions["Duration"].Properties.Trip = 86000
                 # Run MCS
                 self._driver.RunMCS()
                 # Add to constellation object
@@ -185,7 +187,7 @@ class orbitalprop:
     def lineOfSight(self, sat,locationofinterest):
         #Give a sat and location of interest and say whether there is a line of sight and give the distance if so.
         facility = self.scenario.Children.New(AgESTKObjectType.eFacility, "KirbsHouse")
-        facility.Position.AssignGeodetic(28.62, -80.62, 0.03)
+        facility.Position.AssignGeodetic(locationofinterest[0], locationofinterest[1], locationofinterest[2])
         satellites = self.scenario.Children
         constellation = self.constellation
         sat2 = satellites.GetElements(AgESTKObjectType.eSatellite)
@@ -218,7 +220,7 @@ class orbitalprop:
         # Compute chain
         chain.ComputeAccess()
         chainDataProvider = chain.DataProviders.GetDataPrvIntervalFromPath("Object Access")
-        chainResults = chainDataProvider.Exec(scenario.StartTime, scenario.StopTime)
+        chainResults = chainDataProvider.Exec(self.scenario.StartTime, self.scenario.StopTime)
 
         objectList = []
         durationList = []
@@ -281,19 +283,23 @@ class orbitalprop:
     def clearScene(self, orbitPlaneNum, numSatsPerPlane):
         satellites = self.scenario.Children
         self.scenario.Children.Unload(AgESTKObjectType.eConstellation, "SatConstellation")
+        self.scenario.Children.Unload(AgESTKObjectType.eCoverageDefinition, "CoverageDefinition")
+        self.scenario.Children.Unload(AgESTKObjectType.eFacility, "KirbsHouse")
+        self.scenario.Children.Unload(AgESTKObjectType.eChain, "Chain")
         for i in range(1, orbitPlaneNum+1):
             for j in range(1, numSatsPerPlane+1):
                 satellites.Unload(AgESTKObjectType.eSatellite, f"sat{i}{j}")
 
 orbitalelements=[[0,10000,75,20,0],[0,10000,75,80,0],[0,10000,75,140,0],[0,10000,75,200,0]]
 propa = orbitalprop(False)
-propa.CreateScenario(False,'Today','+120 hrs')
+propa.CreateScenario(False,'Today','+48 hrs')
 propa.generateConstellation(4,4,orbitalelements)
-#print(propa.currentPositionKep(11))
+print(propa.currentPositionKep(11))
 print(propa.currentPositionCart(11))
+print(propa.percentCoverage())
+propa.lineOfSight(11, (28, 90, 65))
 propa.clearScene(4, 4)
-# print(propa.percentCoverage())
-##stkRoot.EndUpdate()
+
 
 
 
