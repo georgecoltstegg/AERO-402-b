@@ -240,13 +240,9 @@ class orbitalprop:
 
         # Find object with longest total duration
         index = durationList.index(max(durationList))
-        print("\n{a:s} has the longest total duration: {b:4.2f} minutes.".format(a=objectList[index],
-                                                                                 b=durationList[index]))
-        yesorno = r.randint(1,2)
-        if yesorno==True:
-            return True,r.randint(10000,100000) #Says that yes there is line of sight and returns the distance.
-        else:
-            return False,0 #Says no and returns a NaN value.
+        # print("\n{a:s} has the longest total duration: {b:4.2f} minutes.".format(a=objectList[index],
+        #                                                                          b=durationList[index]))
+        return objectList[index]
 
     def percentCoverage(self):
         """
@@ -264,7 +260,7 @@ class orbitalprop:
         # Set resolution
         grid.ResolutionType = AgECvResolution.eResolutionDistance
         resolution = grid.Resolution
-        resolution.Distance = 100
+        resolution.Distance = 200
         # Add constellation as asset
         coverageDefinition.AssetList.Add("Constellation/SatConstellation")
         coverageDefinition.ComputeAccesses()
@@ -297,8 +293,8 @@ propa.generateConstellation(4,4,orbitalelements)
 print(propa.currentPositionKep(11))
 print(propa.currentPositionCart(11))
 print(propa.percentCoverage())
-propa.lineOfSight(11, (28, 90, 65))
-propa.clearScene(4, 4)
+print(propa.lineOfSight(11, (28, 90, 65)), 'has the longest duration of contact with the facility.')
+# propa.clearScene(4, 4)
 
 
 
