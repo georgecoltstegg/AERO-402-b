@@ -182,8 +182,64 @@ class orbitalprop:
         vz = breakdown[split + 1]
         return [x, y, z, vx, vy, vz]
     
-    def lineOfSight(sat,locationofinterest):
+    def lineOfSight(self, sat,locationofinterest):
         #Give a sat and location of interest and say whether there is a line of sight and give the distance if so.
+        facility = self.scenario.Children.New(AgESTKObjectType.eFacility, "KirbsHouse")
+        facility.Position.AssignGeodetic(28.62, -80.62, 0.03)
+        satellites = self.scenario.Children
+        constellation = self.constellation
+        sat2 = satellites.GetElements(AgESTKObjectType.eSatellite)
+        sat2 = sat2.Item(sat)
+        access = sat2.GetAccessToObject(facility)
+        access.ComputeAccess()
+        self.stkRoot.UnitPreferences.SetCurrentUnit("Time", "Min")
+        accessDataProvider = access.DataProviders.GetDataPrvIntervalFromPath("Access Data")
+        elements = ["Start Time", "Stop Time", "Duration"]
+        accessResults = accessDataProvider.ExecElements(self.scenario.StartTime, self.scenario.StopTime, elements)
+
+        startTimes = accessResults.DataSets.GetDataSetByName("Start Time").GetValues()
+        stopTimes = accessResults.DataSets.GetDataSetByName("Stop Time").GetValues()
+        durations = accessResults.DataSets.GetDataSetByName("Duration").GetValues()
+
+        # Print data to console
+        print("\nAccess Intervals")
+        print("{a:<29s}  {b:<29s}  {c:<14s}".format(a="Start Time", b="Stop Time", c="Duration (min)"))
+        for i in range(len(startTimes)):
+            print("{a:<29s}  {b:<29s}  {c:<4.2f}".format(a=startTimes[i], b=stopTimes[i], c=durations[i]))
+
+        print("\nThe maximum access duration is {a:4.2f} minutes.".format(a=max(durations)))
+        # Create chain
+        chain = self.scenario.Children.New(AgESTKObjectType.eChain, "Chain")
+
+        # Add satellite constellation and facility
+        chain.Objects.AddObject(constellation)
+        chain.Objects.AddObject(facility)
+
+        # Compute chain
+        chain.ComputeAccess()
+        chainDataProvider = chain.DataProviders.GetDataPrvIntervalFromPath("Object Access")
+        chainResults = chainDataProvider.Exec(scenario.StartTime, scenario.StopTime)
+
+        objectList = []
+        durationList = []
+
+        # Loop through all satellite access intervals
+        for intervalNum in range(chainResults.Intervals.Count - 1):
+            # Get interval
+            interval = chainResults.Intervals[intervalNum]
+
+            # Get data for interval
+            objectName = interval.DataSets.GetDataSetByName("Strand Name").GetValues()[0]
+            durations = interval.DataSets.GetDataSetByName("Duration").GetValues()
+
+            # Add data to list
+            objectList.append(objectName)
+            durationList.append(sum(durations))
+
+        # Find object with longest total duration
+        index = durationList.index(max(durationList))
+        print("\n{a:s} has the longest total duration: {b:4.2f} minutes.".format(a=objectList[index],
+                                                                                 b=durationList[index]))
         yesorno = r.randint(1,2)
         if yesorno==True:
             return True,r.randint(10000,100000) #Says that yes there is line of sight and returns the distance.
