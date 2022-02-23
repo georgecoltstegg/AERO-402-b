@@ -276,6 +276,85 @@ class orbitalprop:
         percentCoverage = fomResults.DataSets.GetDataSetByName("Minimum").GetValues()[0]
         return percentCoverage*100
 
+    def apogeeCorrection(self, sat):
+        satellites = self.scenario.Children
+        # TODO: FIX: sats.Item(index of satellite not satellite name)
+        sats = satellites.GetElements(AgESTKObjectType.eSatellite)
+        sat2 = sats.Item(sat-11)
+        _driver = sat2.Propagator
+
+        #currentPositionKep(11) check to see initial values for radius of apogee???
+        # TODO:  Coordinate System from Earth Inertial to Moon Inertial
+        print("Target Sequence containing Maneuver into the Transfer Ellipse...")
+        ts = _driver.MainSequence.Insert(AgEVASegmentType.eVASegmentTypeTargetSequence, "Start Transfer", "-")
+        
+        ts.Properties.DisplayCoordinateSystem = "CentralBody/Moon Inertial"
+        dv1 = ts.Segments.Insert(AgEVASegmentType.eVASegmentTypeManeuver, "DV1", "-")
+        #dv1.PropagatorName = "Moon HPOP Default v10" #DV1 needs the hpop change
+        dv1.Properties.DisplayCoordinateSystem = "CentralBody/Moon Inertial" # DV1 needs to be moon based
+        dv1.SetManeuverType(AgEVAManeuverType.eVAManeuverTypeImpulsive)
+        impulsive = dv1.Maneuver
+        impulsive.SetAttitudeControlType(AgEVAAttitudeControl.eVAAttitudeControlThrustVector)
+        thrustVector = impulsive.AttitudeControl
+        thrustVector.ThrustAxesName = "Satellite/Sat11 VNC(Moon)" #name hard-coded
+        dv1.EnableControlParameter(AgEVAControlManeuver.eVAControlManeuverImpulsiveCartesianX)
+        dv1.Results.Add("Keplerian Elems/Radius of Apoapsis")
+        dc = ts.Profiles["Differential Corrector"]
+        xControlParam = dc.ControlParameters.GetControlByPaths("DV1", "ImpulsiveMnvr.Cartesian.X")
+        xControlParam.Enable = True
+        xControlParam.MaxStep = 0.3
+        roaResult = dc.Results.GetResultByPaths("DV1", "Radius Of Apoapsis")
+        roaResult.Enable = True
+        roaResult.DesiredValue = 10000 #hard-coded radius of Apoapsis
+        #Orbits[orbitPlaneNum - 1][1]
+        roaResult.Tolerance = 0.1
+        dc.MaxIterations = 50
+        dc.EnableDisplayStatus = True
+        dc.Mode = AgEVAProfileMode.eVAProfileModeIterate
+        ts.Action = AgEVATargetSeqAction.eVATargetSeqActionRunActiveProfiles
+        input("Press enter to continue...")
+
+        print("Propagate the Transfer Orbit to Apogee...")
+        transferEllipse = _driver.MainSequence.Insert(AgEVASegmentType.eVASegmentTypePropagate, "Transfer Ellipse", "-")
+        transferEllipse.Properties.DisplayCoordinateSystem = "CentralBody/Moon Inertial"
+        transferEllipse.Properties.Color = Colors.Red
+        transferEllipse.PropagatorName = "Moon HPOP Default v10"
+        transferEllipse.StoppingConditions.Add("Apoapsis")
+        transferEllipse.StoppingConditions.Remove("Duration")
+        input("Press enter to continue...")
+
+        print("Target Sequence containing Maneuver into the Outer Orbit...")
+        ts = _driver.MainSequence.Insert(AgEVASegmentType.eVASegmentTypeTargetSequence, "Finish Transfer", "-")
+        ts.Properties.DisplayCoordinateSystem = "CentralBody/Moon Inertial"
+        dv2 = ts.Segments.Insert(AgEVASegmentType.eVASegmentTypeManeuver, "DV2", "-")
+        dv2.SetManeuverType(AgEVAManeuverType.eVAManeuverTypeImpulsive)
+        impulsive = dv2.Maneuver
+        impulsive.SetAttitudeControlType(AgEVAAttitudeControl.eVAAttitudeControlThrustVector)
+        thrustVector = impulsive.AttitudeControl
+        thrustVector.ThrustAxesName = "Satellite/Sat11 VNC(Moon)"
+        dv2.EnableControlParameter(AgEVAControlManeuver.eVAControlManeuverImpulsiveCartesianX)
+        dv2.Results.Add("Keplerian Elems/Eccentricity")
+        dc = ts.Profiles["Differential Corrector"]
+        xControlParam2 = dc.ControlParameters.GetControlByPaths("DV2", "ImpulsiveMnvr.Cartesian.X")
+        xControlParam2.Enable = True
+        xControlParam2.MaxStep = 0.3
+        eccResult = dc.Results.GetResultByPaths("DV2", "Eccentricity")
+        eccResult.Enable = True
+        eccResult.DesiredValue = 0 #hard-coded eccentricity
+        #Orbits[orbitPlaneNum-1][0]
+        dc.EnableDisplayStatus = True
+        dc.Mode = AgEVAProfileMode.eVAProfileModeIterate
+        ts.Action = AgEVATargetSeqAction.eVATargetSeqActionRunActiveProfiles
+        input("Press enter to continue...")
+
+        print("Propagate the Outer Orbit...")
+        outerOrbit = _driver.MainSequence.Insert(AgEVASegmentType.eVASegmentTypePropagate, "Outer Orbit", "-")
+        outerOrbit.Properties.DisplayCoordinateSystem = "CentralBody/Moon Inertial"
+        outerOrbit.Properties.Color = Colors.Green
+        outerOrbit.PropagatorName = "Moon HPOP Default v10"
+        outerOrbit.StoppingConditions["Duration"].Properties.Trip = 86400
+        input("Press enter to continue...")
+
     def clearScene(self, orbitPlaneNum, numSatsPerPlane):
         satellites = self.scenario.Children
         self.scenario.Children.Unload(AgESTKObjectType.eConstellation, "SatConstellation")
