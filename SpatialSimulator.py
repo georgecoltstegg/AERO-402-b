@@ -35,7 +35,7 @@ class orbitalprop:
             self.stk = STKDesktop.StartApplication(visible=True, userControl=True)
         else:
             #Finds STK and connects to it if it is already running.
-            STK_PID = os.getenv('STK_PID') #os.getenv('STK_PID')19516
+            STK_PID =19516 #os.getenv('STK_PID')19516
             self.stk = STKDesktop.AttachToApplication(pid=STK_PID)
         
     def CreateScenario(self,scenarionew,timestart,duration):
@@ -249,11 +249,12 @@ class orbitalprop:
 numlats=4
 numlongs=4
 
-FILE_NUM = 1 ######FILL THIS OUT FOR FILES
+FILE_NUM = 88 ######FILL THIS OUT FOR FILES
 
-numplanes=[]
-numsats=[]
-orbitalelements=[]
+numplanes=[5]
+numsats=[4]
+orbitalelements=[[[.004,8025.9,39.53,-120,270],[.004,8025.9,39.53,-60,270],[.004,8025.9,39.53,0,270],[.004,8025.9,39.53,60,270],[.004,8025.9,39.53,120,270]]]
+"""
 with open('Architecture_Set'+str(FILE_NUM)+'.txt') as f:
     for k in range(95):
         print('Architecture loaded:'+str(k))
@@ -270,6 +271,7 @@ with open('Architecture_Set'+str(FILE_NUM)+'.txt') as f:
         numplanes.append(number_of_planes)
         numsats.append(number_of_sats)
         orbitalelements.append(float_orbits)
+"""
 """
 for n in range(len(numplanes)):
     print(numplanes[n])
@@ -339,10 +341,10 @@ for n in range(len(orbitalelements)):
         for i in range((numlats-1)*(numlongs-1)):
             all_locations[-1].append([])
             #Check each satellite
+            all_locations[-1][-1].append([facs_xs[i][k],facs_ys[i][k],facs_zs[i][k]])
             for j in range(numplanes[n]*numsats[n]):
                 print(k,i,j)
                 if len(sights[i][j])==3:
-                    all_locations[-1][-1].append([facs_xs[i][k],facs_ys[i][k],facs_zs[i][k]])
                     isAfterOrEqualTo = (sights[i][j][0] < sats_times[0][k] or sights[i][j][0] == sats_times[0][k])
                     isBeforeOrEqualTo = (sights[i][j][1] > sats_times[0][k] or sights[i][j][1] == sats_times[0][k])
                     if isAfterOrEqualTo and isBeforeOrEqualTo:
@@ -367,7 +369,7 @@ for n in range(len(orbitalelements)):
     
     #Print positions of satellites relative to time and location
     for k in range(len(sats_times[0])):
-        for i in range(1):
+        for i in range((numlats-1)*(numlongs-1)):
             for j in range(len(all_locations[k][i])):
                 f.write(str(all_locations[k][i][j][0])+','+str(all_locations[k][i][j][1])+','+str(all_locations[k][i][j][2])+'\n')
             f.write('\n')
