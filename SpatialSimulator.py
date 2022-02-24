@@ -35,7 +35,7 @@ class orbitalprop:
             self.stk = STKDesktop.StartApplication(visible=True, userControl=True)
         else:
             #Finds STK and connects to it if it is already running.
-            STK_PID =19516 #os.getenv('STK_PID')19516
+            STK_PID =13636 #os.getenv('STK_PID')19516
             self.stk = STKDesktop.AttachToApplication(pid=STK_PID)
         
     def CreateScenario(self,scenarionew,timestart,duration):
@@ -249,14 +249,17 @@ class orbitalprop:
 numlats=4
 numlongs=4
 
-FILE_NUM = 88 ######FILL THIS OUT FOR FILES
+FILE_NUM = 2 ######FILL THIS OUT FOR FILES
 
-numplanes=[5]
-numsats=[4]
-orbitalelements=[[[.004,8025.9,39.53,-120,270],[.004,8025.9,39.53,-60,270],[.004,8025.9,39.53,0,270],[.004,8025.9,39.53,60,270],[.004,8025.9,39.53,120,270]]]
-"""
+#GOOD ARCH:
+#numplanes=[5]
+#numsats=[4]
+#orbitalelements=[[[.004,8025.9,39.53,-120,270],[.004,8025.9,39.53,-60,270],[.004,8025.9,39.53,0,270],[.004,8025.9,39.53,60,270],[.004,8025.9,39.53,120,270]]]
+numplanes=[]
+numsats=[]
+orbitalelements=[]
 with open('Architecture_Set'+str(FILE_NUM)+'.txt') as f:
-    for k in range(95):
+    for k in range(59):
         print('Architecture loaded:'+str(k))
         number_of_planes = int(f.readline())
         number_of_sats = int(f.readline())
@@ -271,7 +274,7 @@ with open('Architecture_Set'+str(FILE_NUM)+'.txt') as f:
         numplanes.append(number_of_planes)
         numsats.append(number_of_sats)
         orbitalelements.append(float_orbits)
-"""
+
 """
 for n in range(len(numplanes)):
     print(numplanes[n])
@@ -323,11 +326,12 @@ for n in range(len(orbitalelements)):
         for j in range(numplanes[n]*numsats[n]):
             try:
                 sighted = propa.lineOfSight2(j,i)
+                sights[-1].append([sighted[0],sighted[1],sighted[2]])
             except:
                 sights[-1].append([])
             #print('Point '+str(i)+' can see satellite '+str(j)+' during these times:')
             #print(sighted)
-            sights[-1].append([sighted[0],sighted[1],sighted[2]])
+            
     #We've gathered positions and times that are sighted, so now we check to see how many satellites are spotted and where their at at each time step.
     #Check to see if each satellite can see 4 satellites at all times
     print(sats_times[0][0])
@@ -335,7 +339,7 @@ for n in range(len(orbitalelements)):
     #The results are stored as (Time,Point,(PointCoordinate,SatelliteCoordinate1,SatelliteCoordinate2,...,SatelliteCoordinate3))
     all_locations = []
     #Check each time
-    for k in range(len(sats_times)): #Kevin - changed sats_times[0] to sats_times to fix error in line 345
+    for k in range(len(sats_times[0])):
         #Check each point
         all_locations.append([])
         for i in range((numlats-1)*(numlongs-1)):
