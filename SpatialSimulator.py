@@ -333,7 +333,7 @@ for n in range(len(orbitalelements)):
     #The results are stored as (Time,Point,(PointCoordinate,SatelliteCoordinate1,SatelliteCoordinate2,...,SatelliteCoordinate3))
     all_locations = []
     #Check each time
-    for k in range(len(sats_times[0])):
+    for k in range(len(sats_times)): #Kevin - changed sats_times[0] to sats_times to fix error in line 345
         #Check each point
         all_locations.append([])
         for i in range((numlats-1)*(numlongs-1)):
